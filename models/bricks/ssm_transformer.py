@@ -497,6 +497,7 @@ class SsmTransformerDecoder(nn.Module):
         query_pos_embed = self.ref_point_head(query_sine_embed)
 
         outputs_classes, outputs_coords = [], []
+        # valid_ratio_scale: [B, 1, num_levels, 4]
         valid_ratio_scale = torch.cat([valid_ratios, valid_ratios], -1)[:, None]
 
         # 从空间形状计算位置信息
@@ -504,6 +505,7 @@ class SsmTransformerDecoder(nn.Module):
         memory_pos = self.get_memory_pos(spatial_shapes, level_start_index, value.device)
 
         for layer_idx, layer in enumerate(self.layers):
+            # reference_points_input: [B, Q, num_levels, 4]
             reference_points_input = reference_points.detach()[:, :, None] * valid_ratio_scale
 
             # 通过解码器层
@@ -849,9 +851,9 @@ class SsmTransformerDecoderLayer(nn.Module):
 
         # 提取参考点的中心和尺寸
         # 对于多尺度特征，取第一个级别的参考点
-        center_points = reference_points[..., 0, :]  # [B, Q, 2]
-        # 估计框大小 (这里简化处理，实际应用可能需要更精确的尺寸估计)
-        box_sizes = torch.ones_like(center_points) * 0.1  # [B, Q, 2] - 默认框大小为0.1
+       # If reference_points has shape [B, Q, 4] with format (x,y,w,h)
+        center_points = reference_points[..., 0, :2]  # Extract (x,y) -> [B, Q, 2]
+        box_sizes = reference_points[..., 0, 2:]      # Extract (w,h) -> [B, Q, 2]
 
         # 根据层索引选择序列化策略
         if layer_idx is not None:
