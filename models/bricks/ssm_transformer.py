@@ -864,6 +864,7 @@ class SsmTransformerDecoderLayer(nn.Module):
             strategy = self.serialization_strategy
 
         # 获取序列化顺序
+        # serialization_indices: [B, L] - 序列化顺序索引
         serialization_indices = self.get_serialization_order(memory_pos, center_points, strategy)
 
         # 根据序列化顺序重排记忆和位置
